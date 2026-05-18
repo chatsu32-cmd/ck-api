@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CK 受発注システム</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', 'Yu Gothic', sans-serif;
+  background: #F0F2F5;
+  color: #1e293b;
+  min-height: 100vh;
+}
+:root {
+  --primary: #2563EB;
+  --primary-dark: #1d4ed8;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #0891b2;
+  --border: #E2E8F0;
+  --sidebar-w: 220px;
+}
+
+/* ---------- Layout ---------- */
+#login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2D5A27 100%);
+}
+#main-screen { display: none; min-height: 100vh; }
+
+/* ---------- Login ---------- */
+.login-card {
+  background: white;
+  border-radius: 16px;
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.login-logo { text-align: center; margin-bottom: 32px; }
+.login-logo h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
+.login-logo p { color: #64748b; font-size: 0.875rem; margin-top: 4px; }
+.login-hint {
+  margin-top: 20px;
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+.login-hint-title { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 8px; letter-spacing: 0.05em; }
+.login-hint-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  padding: 3px 0;
+  color: #475569;
+}
+.login-hint-item code {
+  font-family: monospace;
+  background: #e2e8f0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+/* ---------- Forms ---------- */
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  transition: border-color 0.15s;
+  outline: none;
+  background: white;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+.form-group textarea { resize: vertical; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  text-decoration: none;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-success { background: var(--success); color: white; }
+.btn-success:hover { background: #15803d; }
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-secondary {
+  background: #f1f5f9;
+  color: #374151;
+  border: 1.5px solid #e2e8f0;
+}
+.btn-secondary:hover { background: #e2e8f0; }
+.btn-sm { padding: 6px 12px; font-size: 0.8125rem; }
+.btn-full { width: 100%; justify-content: center; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ---------- Sidebar ---------- */
+#sidebar {
+  width: var(--sidebar-w);
+  background: #1e293b;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+}
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-header h2 { font-size: 1rem; font-weight: 700; line-height: 1.4; }
+.role-badge {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-top: 6px;
+  display: inline-block;
+  font-weight: 600;
+}
+.role-badge.ck { background: #16a34a; }
+.role-badge.store { background: #0891b2; }
+nav { padding: 10px 0; flex: 1; }
+nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.15s;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  border-left: 3px solid transparent;
+}
+nav a:hover { background: rgba(255,255,255,0.08); color: white; }
+nav a.active {
+  background: rgba(255,255,255,0.12);
+  color: white;
+  border-left-color: #60a5fa;
+}
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-user-name { font-size: 0.875rem; font-weight: 600; margin-bottom: 10px; }
+.sidebar-user-sub { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-bottom: 10px; }
+
+/* ---------- Content ---------- */
+#content {
+  margin-left: var(--sidebar-w);
+  padding: 28px 32px;
+  min-width: 0;
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-title { font-size: 1.35rem; font-weight: 700; color: #1e293b; }
+
+/* ---------- Cards ---------- */
+.card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.card-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card-title { font-size: 0.9375rem; font-weight: 700; }
+.card-body { padding: 20px; }
+
+/* ---------- Stats ---------- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+}
+.stat-value { font-size: 1.875rem; font-weight: 700; line-height: 1; }
+.stat-label { font-size: 0.8rem; color: #64748b; margin-top: 6px; }
+
+/* ---------- Table ---------- */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+thead th {
+  background: #f8fafc;
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+tbody td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #fafbfc; }
+.clickable-row { cursor: pointer; }
+.clickable-row:hover { background: #f0f6ff !important; }
+
+/* ---------- Badges ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-pending   { background: #f1f5f9; color: #64748b; }
+.badge-confirmed { background: #dbeafe; color: #1d4ed8; }
+.badge-preparing { background: #fef3c7; color: #92400e; }
+.badge-delivered { background: #dcfce7; color: #15803d; }
+.badge-cancelled { background: #fee2e2; color: #b91c1c; }
+
+/* ---------- Modal ---------- */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+}
+.modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+}
+.modal-title { font-size: 1.1rem; font-weight: 700; }
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #94a3b8;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+.modal-body { padding: 22px 24px; }
+.modal-footer {
+  padding: 14px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* ---------- Order Items Input ---------- */
+.order-item-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  margin-bottom: 10px;
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+.add-item-btn {
+  width: 100%;
+  padding: 10px;
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  background: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: all 0.15s;
+  margin-top: 4px;
+}
+.add-item-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ---------- Order Detail ---------- */
+.order-detail-header {
+  background: linear-gradient(135deg, #1e293b, #334155);
+  color: white;
+  padding: 22px 24px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.order-detail-header h2 { font-size: 1.2rem; font-weight: 700; }
+.order-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.order-meta-item {
+  background: rgba(255,255,255,0.1);
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+.order-meta-item .label { font-size: 0.72rem; opacity: 0.7; letter-spacing: 0.03em; }
+.order-meta-item .value { font-size: 0.9375rem; font-weight: 600; margin-top: 3px; }
+.status-select {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---------- Product Grid ---------- */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.product-card {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: box-shadow 0.15s;
+}
+.product-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.product-card.inactive { opacity: 0.5; }
+.product-name { font-weight: 700; font-size: 0.9375rem; }
+.product-meta { font-size: 0.8rem; color: #64748b; }
+.product-actions { display: flex; gap: 6px; margin-top: 4px; }
+.category-section { margin-bottom: 24px; }
+.category-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* ---------- Toast ---------- */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  animation: toastIn 0.2s ease;
+  max-width: 320px;
+}
+.toast-success { background: #16a34a; }
+.toast-error   { background: #dc2626; }
+.toast-info    { background: #0891b2; }
+@keyframes toastIn {
+  from { transform: translateX(60px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* ---------- Empty / Loading ---------- */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: #94a3b8;
+  font-size: 0.9375rem;
+}
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: #94a3b8;
+}
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Error Banner ---------- */
+#login-error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-bottom: 10px;
+  display: none;
+  padding: 8px 12px;
+  background: #fee2e2;
+  border-radius: 6px;
+}
+
+/* ---------- Category chip ---------- */
+.chip {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>&#127830; CK 受発注システム</h1>
+      <p>セントラルキッチン 受発注管理</p>
+    </div>
+    <form id="login-form">
+      <div class="form-group">
+        <label>店舗ID</label>
+        <input type="number" id="login-store-id" placeholder="例: 1" required min="1">
+      </div>
+      <div class="form-group">
+        <label>パスワード</label>
+        <input type="password" id="login-password" placeholder="パスワード" required>
+      </div>
+      <div id="login-error"></div>
+      <button type="submit" class="btn btn-primary btn-full" id="login-btn">ログイン</button>
+    </form>
+    <div class="login-hint">
+      <div class="login-hint-title">デモ アカウント</div>
+      <div class="login-hint-item"><span>セントラルキッチン</span><span>ID: <code>1</code> PW: <code>ck-admin-pass</code></span></div>
+      <div class="login-hint-item"><span>新宿店</span><span>ID: <code>2</code> PW: <code>shinjuku123</code></span></div>
+      <div class="login-hint-item"><span>渋谷店</span><span>ID: <code>3</code> PW: <code>shibuya123</code></span></div>
+      <div class="login-hint-item"><span>池袋店</span><span>ID: <code>4</code> PW: <code>ikebukuro123</code></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="main-screen">
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <h2>&#127830; CK 受発注</h2>
+      <div style="margin-top:10px;">
+        <div id="sidebar-store-name" class="sidebar-user-name"></div>
+        <span id="sidebar-role-badge" class="role-badge"></span>
+      </div>
+    </div>
+    <nav id="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <button onclick="logout()" class="btn btn-secondary btn-sm btn-full">ログアウト</button>
+    </div>
+  </div>
+  <div id="content">
+    <div id="view-container"></div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast-container"></div>
+
+<!-- ===== PRODUCT MODAL ===== -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="product-modal-title">商品追加</span>
+      <button class="modal-close" onclick="closeModal('product-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="product-id">
+      <div class="form-group">
+        <label>商品名 <span style="color:#dc2626">*</span></label>
+        <input type="text" id="product-name" placeholder="例: カルビ">
+      </div>
+      <div class="form-group">
+        <label>単位</label>
+        <select id="product-unit">
+          <option value="kg">kg</option>
+          <option value="g">g</option>
+          <option value="L">L</option>
+          <option value="本">本</option>
+          <option value="個">個</option>
+          <option value="袋">袋</option>
+          <option value="合">合</option>
+          <option value="皿">皿</option>
+          <option value="枚">枚</option>
+          <option value="パック">パック</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>カテゴリ</label>
+        <select id="product-category">
+          <option value="肉類">肉類</option>
+          <option value="内臓類">内臓類</option>
+          <option value="副菜">副菜</option>
+          <option value="タレ">タレ</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('product-modal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveProduct()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STORE MODAL ===== -->
+<div class="modal-overlay" id="store-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">店舗追加</span>
+      <button class="modal-close" onclick="closeModal('store-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>店舗名 <span style="color:#dc2626">*</span></label>
+        <input type="text" id="store-name" placeholder="例: 新橋店">
+      </div>
+      <div class="form-group">
+        <label>パスワード <span style="color:#dc2626">*</span></label>
+        <input type="password" id="store-password" placeholder="ログイン用パスワード">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('store-modal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveStore()">追加</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =============================================================
+// STATE
+// =============================================================
+const state = {
+  token: localStorage.getItem('ck_token') || null,
+  user:  JSON.parse(localStorage.getItem('ck_user') || 'null'),
+  products: [],
+  stores:   [],
+  orders:   [],
+  currentView: 'orders',
+};
+
+// =============================================================
+// API
+// =============================================================
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (state.token) opts.headers['Authorization'] = 'Bearer ' + state.token;
+  if (body !== undefined) opts.body = JSON.stringify(body);
+
+  const res = await fetch(path, opts);
+  if (res.status === 401) { logout(); return null; }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || data.message || res.statusText);
+  return data;
+}
+
+// =============================================================
+// AUTH
+// =============================================================
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn    = document.getElementById('login-btn');
+  const errEl  = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'ログイン中...';
+  try {
+    const data = await api('POST', '/auth/login', {
+      store_id: parseInt(document.getElementById('login-store-id').value, 10),
+      password: document.getElementById('login-password').value,
+    });
+    state.token = data.token;
+    state.user  = data.store;
+    localStorage.setItem('ck_token', data.token);
+    localStorage.setItem('ck_user', JSON.stringify(data.store));
+    initApp();
+  } catch (err) {
+    errEl.textContent = err.message || 'ログインに失敗しました';
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ログイン';
+  }
+});
+
+function logout() {
+  state.token = null;
+  state.user  = null;
+  localStorage.removeItem('ck_token');
+  localStorage.removeItem('ck_user');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('main-screen').style.display  = 'none';
+  document.getElementById('login-form').reset();
+  document.getElementById('login-error').style.display = 'none';
+}
+
+// =============================================================
+// INIT
+// =============================================================
+function initApp() {
+  if (!state.token || !state.user) return;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-screen').style.display  = 'flex';
+
+  document.getElementById('sidebar-store-name').textContent = state.user.name;
+  const badge = document.getElementById('sidebar-role-badge');
+  badge.textContent = state.user.role === 'ck' ? 'セントラルキッチン' : '店舗';
+  badge.className   = 'role-badge ' + state.user.role;
+
+  renderNav();
+  navigate('orders');
+}
+
+function renderNav() {
+  const isCK  = state.user.role === 'ck';
+  const links = isCK
+    ? [
+        { id: 'orders',   icon: '📋', label: '受注一覧' },
+        { id: 'products', icon: '📦', label: '商品マスタ' },
+        { id: 'stores',   icon: '🏪', label: '店舗管理' },
+      ]
+    : [
+        { id: 'orders',    icon: '📋', label: '発注一覧' },
+        { id: 'new-order', icon: '✏️',  label: '新規発注' },
+      ];
+  document.getElementById('sidebar-nav').innerHTML = links
+    .map(l => `<a id="nav-${l.id}" onclick="navigate('${l.id}')">${l.icon} ${l.label}</a>`)
+    .join('');
+}
+
+function navigate(view) {
+  state.currentView = view;
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  const link = document.getElementById('nav-' + view);
+  if (link) link.classList.add('active');
+
+  const views = {
+    orders:      renderOrdersView,
+    'new-order': renderNewOrderView,
+    products:    renderProductsView,
+    stores:      renderStoresView,
+  };
+  if (views[view]) views[view]();
+}
+
+// =============================================================
+// HELPERS
+// =============================================================
+function setContent(html) {
+  document.getElementById('view-container').innerHTML = html;
+}
+function showLoading() {
+  setContent('<div class="loading"><div class="spinner"></div></div>');
+}
+function fmt(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleString('ja-JP', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+const STATUS_LABELS = {
+  pending:   '未確認',
+  confirmed: '確認済',
+  preparing: '準備中',
+  delivered: '納品済',
+  cancelled: 'キャンセル',
+};
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3800);
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// =============================================================
+// ORDERS LIST VIEW
+// =============================================================
+async function renderOrdersView() {
+  showLoading();
+  try {
+    state.orders = await api('GET', '/orders');
+    const orders = state.orders;
+    const isCK   = state.user.role === 'ck';
+
+    setContent(`
+      <div class="page-header">
+        <h1 class="page-title">${isCK ? '受注一覧' : '発注一覧'}</h1>
+        ${!isCK ? '<button class="btn btn-primary" onclick="navigate(\'new-order\')">&#65291; 新規発注</button>' : ''}
+      </div>
+
+      ${isCK ? buildStats(orders) : ''}
+
+      <div class="card">
+        ${orders.length === 0
+          ? '<div class="empty-state">発注データがありません</div>'
+          : `<div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    ${isCK ? '<th>店舗</th>' : ''}
+                    <th>ステータス</th>
+                    <th>納品希望日</th>
+                    <th>発注日時</th>
+                    <th>備考</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${orders.map(o => `
+                    <tr class="clickable-row" onclick="showOrderDetail(${o.id})">
+                      <td><strong>#${o.id}</strong></td>
+                      ${isCK ? `<td>${o.store_name || '—'}</td>` : ''}
+                      <td><span class="badge badge-${o.status}">${STATUS_LABELS[o.status] || o.status}</span></td>
+                      <td>${o.delivery_date || '—'}</td>
+                      <td>${fmt(o.ordered_at)}</td>
+                      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o.notes || '—'}</td>
+                      <td onclick="event.stopPropagation()">
+                        <button class="btn btn-secondary btn-sm" onclick="showOrderDetail(${o.id})">詳細</button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+             </div>`
+        }
+      </div>
+    `);
+  } catch (err) {
+    setContent(`<div class="card card-body"><p style="color:#dc2626">エラー: ${err.message}</p></div>`);
+  }
+}
+
+function buildStats(orders) {
+  const c = { pending:0, confirmed:0, preparing:0, delivered:0, cancelled:0 };
+  orders.forEach(o => { if (c[o.status] !== undefined) c[o.status]++; });
+  return `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">${orders.length}</div>
+        <div class="stat-label">総発注数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:#64748b">${c.pending}</div>
+        <div class="stat-label">未確認</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:#1d4ed8">${c.confirmed + c.preparing}</div>
+        <div class="stat-label">対応中</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:#16a34a">${c.delivered}</div>
+        <div class="stat-label">納品済</div>
+      </div>
+    </div>
+  `;
+}
+
+// =============================================================
+// ORDER DETAIL VIEW
+// =============================================================
+async function showOrderDetail(orderId) {
+  showLoading();
+  try {
+    const order = await api('GET', '/orders/' + orderId);
+    const isCK  = state.user.role === 'ck';
+
+    setContent(`
+      <div class="page-header">
+        <button class="btn btn-secondary" onclick="navigate('orders')">&#8592; 一覧に戻る</button>
+        <a href="/orders/${order.id}/pdf" target="_blank" class="btn btn-secondary">&#128196; PDF出力</a>
+      </div>
+
+      <div class="order-detail-header">
+        <h2>発注 #${order.id}</h2>
+        <div class="order-meta">
+          ${isCK ? `<div class="order-meta-item"><div class="label">店舗</div><div class="value">${order.store_name || '—'}</div></div>` : ''}
+          <div class="order-meta-item">
+            <div class="label">ステータス</div>
+            <div class="value">
+              ${isCK
+                ? `<select class="status-select" onchange="updateStatus(${order.id}, this.value)">
+                    ${Object.entries(STATUS_LABELS).map(([v,l]) =>
+                      `<option value="${v}" ${order.status === v ? 'selected' : ''}>${l}</option>`
+                    ).join('')}
+                   </select>`
+                : `<span class="badge badge-${order.status}" style="font-size:0.875rem;">${STATUS_LABELS[order.status] || order.status}</span>`
+              }
+            </div>
+          </div>
+          <div class="order-meta-item">
+            <div class="label">納品希望日</div>
+            <div class="value">${order.delivery_date || '未指定'}</div>
+          </div>
+          <div class="order-meta-item">
+            <div class="label">発注日時</div>
+            <div class="value">${fmt(order.ordered_at)}</div>
+          </div>
+          <div class="order-meta-item">
+            <div class="label">最終更新</div>
+            <div class="value">${fmt(order.updated_at)}</div>
+          </div>
+          ${order.notes ? `
+            <div class="order-meta-item" style="grid-column:1/-1;">
+              <div class="label">備考</div>
+              <div class="value">${order.notes}</div>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">発注明細</span>
+          <span style="color:#64748b;font-size:0.875rem;">${(order.items || []).length} 品目</span>
+        </div>
+        ${!order.items || order.items.length === 0
+          ? '<div class="empty-state">明細なし</div>'
+          : `<div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>カテゴリ</th>
+                    <th>商品名</th>
+                    <th style="text-align:right">数量</th>
+                    <th>単位</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${order.items.map(item => `
+                    <tr>
+                      <td><span class="chip">${item.category || '—'}</span></td>
+                      <td>${item.product_name}</td>
+                      <td style="text-align:right;font-weight:700;">${item.quantity}</td>
+                      <td>${item.unit}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+             </div>`
+        }
+      </div>
+    `);
+  } catch (err) {
+    setContent(`<div class="card card-body"><p style="color:#dc2626">エラー: ${err.message}</p></div>`);
+  }
+}
+
+async function updateStatus(orderId, newStatus) {
+  try {
+    await api('PATCH', `/orders/${orderId}/status`, { status: newStatus });
+    toast('ステータスを更新しました', 'success');
+  } catch (err) {
+    toast('更新に失敗しました: ' + err.message, 'error');
+  }
+}
+
+// =============================================================
+// NEW ORDER VIEW
+// =============================================================
+async function renderNewOrderView() {
+  showLoading();
+  try {
+    state.products = await api('GET', '/products');
+
+    setContent(`
+      <div class="page-header">
+        <h1 class="page-title">新規発注</h1>
+      </div>
+      <div class="card" style="max-width:720px;">
+        <div class="card-header"><span class="card-title">発注内容の入力</span></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>納品希望日</label>
+            <input type="date" id="order-delivery-date" style="max-width:220px;">
+          </div>
+          <div class="form-group">
+            <label>備考</label>
+            <textarea id="order-notes" rows="2" placeholder="特記事項があれば記入してください"></textarea>
+          </div>
+
+          <div style="margin-top:22px;">
+            <div style="font-weight:600;font-size:0.9375rem;margin-bottom:10px;">
+              発注品目 <span style="color:#dc2626">*</span>
+            </div>
+            <div id="order-items-container"></div>
+            <button class="add-item-btn" onclick="addOrderItemRow()">&#65291; 品目を追加</button>
+          </div>
+
+          <div style="margin-top:24px;display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #e2e8f0;padding-top:20px;">
+            <button class="btn btn-secondary" onclick="navigate('orders')">キャンセル</button>
+            <button class="btn btn-primary" id="submit-order-btn" onclick="submitOrder()">発注を確定する</button>
+          </div>
+        </div>
+      </div>
+    `);
+
+    addOrderItemRow();
+  } catch (err) {
+    setContent(`<div class="card card-body"><p style="color:#dc2626">エラー: ${err.message}</p></div>`);
+  }
+}
+
+function buildProductOptions() {
+  const grouped = {};
+  state.products
+    .filter(p => p.active)
+    .forEach(p => {
+      if (!grouped[p.category]) grouped[p.category] = [];
+      grouped[p.category].push(p);
+    });
+  return Object.entries(grouped).map(([cat, prods]) => `
+    <optgroup label="${cat}">
+      ${prods.map(p => `<option value="${p.id}" data-unit="${p.unit}">${p.name}</option>`).join('')}
+    </optgroup>
+  `).join('');
+}
+
+function addOrderItemRow() {
+  const container = document.getElementById('order-items-container');
+  if (!container) return;
+
+  const row = document.createElement('div');
+  row.className = 'order-item-row';
+  row.innerHTML = `
+    <div style="flex:3;">
+      <div style="font-size:0.75rem;color:#64748b;margin-bottom:4px;">商品</div>
+      <select class="item-product" onchange="syncUnit(this)" style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;font-size:0.9rem;background:white;">
+        <option value="">-- 商品を選択 --</option>
+        ${buildProductOptions()}
+      </select>
+    </div>
+    <div style="flex:1;min-width:80px;">
+      <div style="font-size:0.75rem;color:#64748b;margin-bottom:4px;">数量</div>
+      <input type="number" class="item-quantity" placeholder="0" step="0.1" min="0.1"
+        style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-family:inherit;font-size:0.9rem;">
+    </div>
+    <div style="flex:0.6;min-width:48px;">
+      <div style="font-size:0.75rem;color:#64748b;margin-bottom:4px;">単位</div>
+      <div class="item-unit" style="padding:10px 4px;font-size:0.875rem;color:#64748b;font-weight:600;"></div>
+    </div>
+    <button class="btn btn-danger btn-sm" style="align-self:flex-end;" onclick="removeOrderItemRow(this)">&#215;</button>
+  `;
+  container.appendChild(row);
+}
+
+function syncUnit(selectEl) {
+  const row = selectEl.closest('.order-item-row');
+  const opt = selectEl.options[selectEl.selectedIndex];
+  row.querySelector('.item-unit').textContent = opt.dataset.unit || '';
+}
+
+function removeOrderItemRow(btn) {
+  const container = document.getElementById('order-items-container');
+  if (container.children.length <= 1) {
+    toast('品目は1つ以上必要です', 'error');
+    return;
+  }
+  btn.closest('.order-item-row').remove();
+}
+
+async function submitOrder() {
+  const rows  = document.querySelectorAll('.order-item-row');
+  const items = [];
+  let valid = true;
+
+  rows.forEach(row => {
+    const productId = parseInt(row.querySelector('.item-product').value, 10);
+    const quantity  = parseFloat(row.querySelector('.item-quantity').value);
+    if (!productId || !quantity || quantity <= 0) { valid = false; return; }
+    items.push({ product_id: productId, quantity });
+  });
+
+  if (!valid || items.length === 0) {
+    toast('商品と数量を正しく入力してください', 'error');
+    return;
+  }
+
+  const body = { items };
+  const d = document.getElementById('order-delivery-date').value;
+  const n = document.getElementById('order-notes').value.trim();
+  if (d) body.delivery_date = d;
+  if (n) body.notes = n;
+
+  const btn = document.getElementById('submit-order-btn');
+  btn.disabled = true;
+  btn.textContent = '送信中...';
+  try {
+    const order = await api('POST', '/orders', body);
+    toast(`発注 #${order.id} を送信しました`, 'success');
+    navigate('orders');
+  } catch (err) {
+    toast('発注に失敗しました: ' + err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '発注を確定する';
+  }
+}
+
+// =============================================================
+// PRODUCTS VIEW (CK only)
+// =============================================================
+async function renderProductsView() {
+  showLoading();
+  try {
+    state.products = await api('GET', '/products');
+    const products  = state.products;
+    const categories = [...new Set(products.map(p => p.category))];
+
+    setContent(`
+      <div class="page-header">
+        <h1 class="page-title">商品マスタ</h1>
+        <button class="btn btn-primary" onclick="openAddProduct()">&#65291; 商品追加</button>
+      </div>
+      ${categories.map(cat => {
+        const catProds = products.filter(p => p.category === cat);
+        return `
+          <div class="category-section">
+            <div class="category-section-title">${cat}</div>
+            <div class="product-grid">
+              ${catProds.map(p => `
+                <div class="product-card ${p.active ? '' : 'inactive'}">
+                  <div class="product-name">${p.name}</div>
+                  <div class="product-meta">単位: <strong>${p.unit}</strong> &nbsp;|&nbsp; ${p.active ? '&#9989; 有効' : '&#10060; 無効'}</div>
+                  <div class="product-actions">
+                    <button class="btn btn-secondary btn-sm" onclick='openEditProduct(${JSON.stringify(p)})'>編集</button>
+                    ${p.active
+                      ? `<button class="btn btn-danger btn-sm" onclick="toggleProduct(${p.id}, false)">無効化</button>`
+                      : `<button class="btn btn-success btn-sm" onclick="toggleProduct(${p.id}, true)">有効化</button>`
+                    }
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+      ${products.length === 0 ? '<div class="empty-state">商品が登録されていません</div>' : ''}
+    `);
+  } catch (err) {
+    setContent(`<div class="card card-body"><p style="color:#dc2626">エラー: ${err.message}</p></div>`);
+  }
+}
+
+function openAddProduct() {
+  document.getElementById('product-modal-title').textContent = '商品追加';
+  document.getElementById('product-id').value       = '';
+  document.getElementById('product-name').value     = '';
+  document.getElementById('product-unit').value     = 'kg';
+  document.getElementById('product-category').value = 'その他';
+  openModal('product-modal');
+}
+
+function openEditProduct(product) {
+  document.getElementById('product-modal-title').textContent = '商品編集';
+  document.getElementById('product-id').value       = product.id;
+  document.getElementById('product-name').value     = product.name;
+  document.getElementById('product-unit').value     = product.unit;
+  document.getElementById('product-category').value = product.category;
+  openModal('product-modal');
+}
+
+async function saveProduct() {
+  const id   = document.getElementById('product-id').value;
+  const name = document.getElementById('product-name').value.trim();
+  if (!name) { toast('商品名を入力してください', 'error'); return; }
+
+  const body = {
+    name,
+    unit:     document.getElementById('product-unit').value,
+    category: document.getElementById('product-category').value,
+    active:   true,
+  };
+  try {
+    if (id) {
+      await api('PUT', `/products/${id}`, body);
+      toast('商品を更新しました', 'success');
+    } else {
+      await api('POST', '/products', body);
+      toast('商品を追加しました', 'success');
+    }
+    closeModal('product-modal');
+    renderProductsView();
+  } catch (err) {
+    toast('保存に失敗しました: ' + err.message, 'error');
+  }
+}
+
+async function toggleProduct(id, active) {
+  const product = state.products.find(p => p.id === id);
+  if (!product) return;
+  const label = active ? '有効化' : '無効化';
+  if (!active && !confirm(`「${product.name}」を無効化しますか？`)) return;
+  try {
+    if (active) {
+      await api('PUT', `/products/${id}`, { ...product, active: true });
+    } else {
+      await api('DELETE', `/products/${id}`);
+    }
+    toast(`商品を${label}しました`, 'success');
+    renderProductsView();
+  } catch (err) {
+    toast(`${label}に失敗しました: ` + err.message, 'error');
+  }
+}
+
+// =============================================================
+// STORES VIEW (CK only)
+// =============================================================
+async function renderStoresView() {
+  showLoading();
+  try {
+    state.stores = await api('GET', '/stores');
+    const stores  = state.stores;
+
+    setContent(`
+      <div class="page-header">
+        <h1 class="page-title">店舗管理</h1>
+        <button class="btn btn-primary" onclick="openAddStore()">&#65291; 店舗追加</button>
+      </div>
+      <div class="card">
+        ${stores.length === 0
+          ? '<div class="empty-state">店舗が登録されていません</div>'
+          : `<div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>店舗名</th>
+                    <th>ロール</th>
+                    <th>登録日時</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${stores.map(s => `
+                    <tr>
+                      <td style="font-weight:700;">${s.id}</td>
+                      <td>${s.name}</td>
+                      <td><span class="badge badge-confirmed">店舗</span></td>
+                      <td>${fmt(s.created_at)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+             </div>`
+        }
+      </div>
+    `);
+  } catch (err) {
+    setContent(`<div class="card card-body"><p style="color:#dc2626">エラー: ${err.message}</p></div>`);
+  }
+}
+
+function openAddStore() {
+  document.getElementById('store-name').value     = '';
+  document.getElementById('store-password').value = '';
+  openModal('store-modal');
+}
+
+async function saveStore() {
+  const name     = document.getElementById('store-name').value.trim();
+  const password = document.getElementById('store-password').value;
+  if (!name || !password) { toast('店舗名とパスワードを入力してください', 'error'); return; }
+  try {
+    await api('POST', '/stores', { name, password });
+    toast('店舗を追加しました', 'success');
+    closeModal('store-modal');
+    renderStoresView();
+  } catch (err) {
+    toast('追加に失敗しました: ' + err.message, 'error');
+  }
+}
+
+// =============================================================
+// AUTO-LOGIN if token exists
+// =============================================================
+if (state.token && state.user) {
+  initApp();
+}
+</script>
+</body>
+</html>

@@ -4,9 +4,12 @@ const cors       = require('cors');
 const { initDb, pool } = require('./db/database');
 const bcrypt     = require('bcrypt');
 
+const path = require('path');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use('/auth',     require('./routes/auth'));
 app.use('/orders',   require('./routes/orders'));
@@ -14,6 +17,10 @@ app.use('/products', require('./routes/products'));
 app.use('/stores',   require('./routes/stores'));
 
 app.get('/health', (_req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
 
 async function seedIfEmpty() {
   const { rows } = await pool.query("SELECT id FROM stores WHERE role='ck' LIMIT 1");

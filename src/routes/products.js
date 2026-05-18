@@ -3,8 +3,13 @@ const { pool } = require('../db/database');
 const auth     = require('../middleware/auth');
 const router   = express.Router();
 
-router.get('/', auth, async (_req, res) => {
-  const { rows } = await pool.query('SELECT * FROM products WHERE active=1 ORDER BY category, name');
+router.get('/', auth, async (req, res) => {
+  const isCK = req.user.role === 'ck';
+  const { rows } = await pool.query(
+    isCK
+      ? 'SELECT * FROM products ORDER BY category, name'
+      : 'SELECT * FROM products WHERE active=1 ORDER BY category, name'
+  );
   res.json(rows);
 });
 
