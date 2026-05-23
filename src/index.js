@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express    = require('express');
 const cors       = require('cors');
-const { initDb, pool } = require('./db/database');
+const { initDb, initRacingDb, pool } = require('./db/database');
 const bcrypt     = require('bcrypt');
 
 const app = express();
@@ -12,6 +12,7 @@ app.use('/auth',     require('./routes/auth'));
 app.use('/orders',   require('./routes/orders'));
 app.use('/products', require('./routes/products'));
 app.use('/stores',   require('./routes/stores'));
+app.use('/racing',   require('./routes/racing'));
 
 app.get('/health', (_req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
@@ -56,6 +57,7 @@ async function seedIfEmpty() {
 const PORT = process.env.PORT || 3000;
 
 initDb()
+  .then(initRacingDb)
   .then(seedIfEmpty)
   .then(() => app.listen(PORT, () => console.log(`✅ CK-API 起動中 → http://localhost:${PORT}`)))
   .catch(err => { console.error('DB初期化失敗:', err); process.exit(1); });

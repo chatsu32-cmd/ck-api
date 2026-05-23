@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "seed": "node src/db/seed.js"
+    "seed": "node src/db/seed.js",
+    "seed:racing": "node src/db/seedRacing.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
